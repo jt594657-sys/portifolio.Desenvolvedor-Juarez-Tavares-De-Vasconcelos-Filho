@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.T.A.R.K. Protocol | Juarez Tavares</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #030508;
+            color: #e0f7fa;
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+            /* Novo Cursor Personalizado HUD */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="%2300ffff" stroke-width="2"/><circle cx="16" cy="16" r="2" fill="%23ff0000"/><path d="M16 0v6M16 32v-6M0 16h6M32 16h-6" stroke="%2300ffff" stroke-width="2"/></svg>') 16 16, crosshair;
+        }
+
+        /* TELA DE BOOT (J.A.R.V.I.S) */
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #020305;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 50px;
+            color: #00ffff;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #00ffff;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #boot-text p { margin: 5px 0; opacity: 0; }
+
+        /* FUNDO ROTATIVO */
+        #armor-background {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            z-index: -4;
+            transition: background-image 2s ease-in-out; 
+            filter: brightness(0.5) contrast(1.3);
+        }
+
+        /* Película Escura e Grid */
+        .dark-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(3, 5, 8, 0.4) 0%, rgba(0, 0, 0, 0.9) 100%);
+            z-index: -3;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: 
+                linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* HOMEM DE FERRO 3D POR TRÁS DOS CARDS */
+        #iron-man-3d {
+            position: fixed;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 85vh;
+            z-index: -1; 
+            pointer-events: none; 
+            filter: drop-shadow(0 0 40px rgba(0, 255, 255, 0.4)); 
+            animation: floatIronMan 6s ease-in-out infinite;
+            transition: opacity 0.5s ease-in-out; 
+        }
+
+        @keyframes floatIronMan {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-25px); }
+        }
+
+        /* HUD Scanner (Linha e Overlay) */
+        .hud-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 200px rgba(0, 255, 255, 0.15);
+            pointer-events: none;
+            z-index: 998; /* Abaixo da tela de boot */
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 255, 0.03) 51%, transparent 100%);
+            background-size: 100% 4px;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100vh; }
+        }
+
+        /* PARTICULAS (FAÍSCAS) */
+        .particle {
+            position: fixed;
+            bottom: -10px;
+            width: 3px;
+            height: 3px;
+            background-color: #00ffff;
+            box-shadow: 0 0 10px #00ffff, 0 0 20px #ffffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100vh) scale(0); opacity: 0; }
+        }
+
+        /* Cabeçalho Holográfico */
+        .hologram-header {
+            text-align: center;
+            padding: 50px 20px 30px;
+            background: radial-gradient(ellipse at top, rgba(139, 0, 0, 0.5) 0%, transparent 80%);
+            border-bottom: 2px solid rgba(0, 255, 255, 0.4);
+            margin-bottom: 50px;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            opacity: 0; /* Começa invisível para a animação */
+            transform: translateY(-50px);
+            transition: all 1.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .show-header {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        h1 {
+            color: #ffcc00;
+            font-size: 3.8em;
+            letter-spacing: 8px;
+            text-shadow: 0 0 20px #ffcc00, 0 0 40px #8b0000;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 10px #ffcc00, 0 0 20px #8b0000; }
+            to { text-shadow: 0 0 30px #ffcc00, 0 0 60px #ff0000, 0 0 15px #fff; }
+        }
+
+        .user-auth {
+            color: #00ffff;
+            font-size: 1.6em;
+            text-shadow: 0 0 15px #00ffff;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .tech-info-panel {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .panel-item {
+            background: rgba(0, 20, 30, 0.7);
+            border: 1px solid #00ffff;
+            padding: 12px 25px;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            font-size: 1.1em;
+            backdrop-filter: blur(5px);
+            text-transform: uppercase;
+        }
+
+        .panel-item span { color: #ffcc00; font-weight: bold; }
+
+        /* Área dos Cards 3D */
+        .tech-hall {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 60px;
+            padding: 20px 40px 100px;
+            perspective: 1200px;
+            position: relative;
+            z-index: 0;
+        }
+
+        /* Cartão de Habilidade */
+        .tech-card {
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.85) 0%, rgba(5, 5, 8, 0.6) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid rgba(0, 255, 255, 0.6);
+            border-bottom: 2px solid rgba(255, 204, 0, 0.6);
+            border-radius: 15px;
+            width: 320px;
+            height: 450px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 50px;
+            transform-style: preserve-3d; 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.9), inset 0 0 25px rgba(0,0,0,0.8);
+            transition: border-color 0.4s, box-shadow 0.4s;
+            
+            /* Animação de entrada */
+            opacity: 0;
+            transform: translateY(100px) rotateX(-20deg);
+        }
+
+        .tech-card.visible {
+            opacity: 1;
+            transform: translateY(0) rotateX(0deg);
+            transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .tech-card:hover {
+            border-color: #00ffff;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.4), inset 0 0 80px rgba(139, 0, 0, 0.6);
+        }
+
+        /* Reator Arc */
+        .arc-reactor {
+            width: 85px;
+            height: 85px;
+            border: 3px solid #00ffff;
+            border-radius: 50%;
+            margin-bottom: 30px;
+            background: radial-gradient(circle, #ffffff 10%, transparent 60%);
+            box-shadow: 0 0 25px #00ffff, inset 0 0 25px #00ffff, 0 0 10px #ffffff;
+            transform: translateZ(70px);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+        }
+
+        .arc-reactor::after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 2px dashed rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .tech-card:hover .arc-reactor {
+            background: radial-gradient(circle, #ffffff 30%, transparent 80%);
+            box-shadow: 0 0 70px #ffffff, 0 0 120px #00ffff, inset 0 0 40px #ffffff;
+            transform: translateZ(100px) scale(1.2);
+            border-color: #ffffff;
+        }
+
+        .lang-name {
+            color: #ffcc00;
+            font-size: 2.6em;
+            transform: translateZ(55px);
+            text-shadow: 4px 4px 0 #000, 0 0 15px #ffcc00;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .lang-desc {
+            color: #d1f2f2;
+            font-size: 1.15em;
+            text-align: center;
+            padding: 0 25px;
+            line-height: 1.6;
+            transform: translateZ(45px);
+            text-shadow: 1px 1px 4px #000;
+        }
+
+        /* O Raio Repulsor */
+        .repulsor-blast {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 160px; height: 160px;
+            margin-top: -80px; margin-left: -80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(0,255,255,0.9) 40%, transparent 70%);
+            opacity: 0;
+            transform: translateZ(10px) scale(0.1);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+
+        .tech-card:hover .repulsor-blast {
+            opacity: 1;
+            transform: translateZ(130px) scale(3.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE INICIALIZAÇÃO J.A.R.V.I.S -->
+    <div id="boot-screen">
+        <div id="boot-text"></div>
+    </div>
+
+    <!-- FUNDO E ELEMENTOS VISUAIS -->
+    <div id="armor-background"></div>
+    <div class="dark-overlay"></div>
+    
+    <img id="iron-man-3d" src="https://pngimg.com/uploads/ironman/ironman_PNG44.png" alt="Iron Man Hologram">
+    <div class="hud-overlay"></div>
+    <div id="particles-container"></div> <!-- Container para as faíscas -->
+
+    <audio id="repulsor-sound" src="repulsor.mp3" preload="auto"></audio>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <header class="hologram-header" id="main-header">
+        <h1>S.T.A.R.K. Databank</h1>
+        <div class="user-auth">Acesso Master Autorizado: Juarez Tavares de Vasconcelos Filho</div>
+        
+        <div class="tech-info-panel">
+            <div class="panel-item"><span>LOCAL:</span> Manaus, AM</div>
+            <div class="panel-item"><span>BASE:</span> FUCAPI (Técnico T.I)</div>
+            <div class="panel-item"><span>STATUS:</span> Desenvolvedor Ativo</div>
+        </div>
+    </header>
+
+    <main>
+        <section class="tech-hall" id="hall"></section>
+    </main>
+
+    <script>
+        // ==========================================
+        // 0. SEQUÊNCIA DE BOOT J.A.R.V.I.S
+        // ==========================================
+        const bootLines = [
+            "> INICIALIZANDO PROTOCOLO S.T.A.R.K...",
+            "> ESTABELECENDO CONEXÃO COM O SERVIDOR PRINCIPAL...",
+            "> CARREGANDO MATRIZ DE HABILIDADES...",
+            "> RENDERIZANDO TRAJE MARK 85...",
+            "> ACESSO MASTER AUTORIZADO. BEM-VINDO, SENHOR TAVARES."
+        ];
+
+        const bootTextContainer = document.getElementById('boot-text');
+        const bootScreen = document.getElementById('boot-screen');
+        const mainHeader = document.getElementById('main-header');
+        let delay = 0;
+
+        bootLines.forEach((line, index) => {
+            setTimeout(() => {
+                const p = document.createElement('p');
+                p.textContent = line;
+                bootTextContainer.appendChild(p);
+                
+                // Fade In do texto
+                setTimeout(() => p.style.opacity = 1, 50);
+
+                // Quando for a última linha, encerra o boot
+                if(index === bootLines.length - 1) {
+                    setTimeout(() => {
+                        bootScreen.style.opacity = 0;
+                        setTimeout(() => {
+                            bootScreen.style.display = 'none';
+                            // Inicia a animação de entrada do site
+                            startSiteAnimations();
+                        }, 1000);
+                    }, 1500);
+                }
+            }, delay);
+            delay += 800; // Tempo entre cada linha aparecer
+        });
+
+        // Função para mostrar os elementos após o boot
+        function startSiteAnimations() {
+            mainHeader.classList.add('show-header');
+            
+            // Revela os cards um por um
+            const cards = document.querySelectorAll('.tech-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('visible');
+                }, index * 200); // 200ms de intervalo entre cada card
+            });
+        }
+
+        // ==========================================
+        // 1. SISTEMA DE FUNDO E ARMADURAS ROTATIVAS
+        // ==========================================
+        const armadurasBackground = [
+            'url("https://images.hdqwalls.com/download/iron-man-mark-85-4k-5f-1920x1080.jpg")', 
+            'url("https://images.hdqwalls.com/download/iron-man-3-marvel-4k-9m-1920x1080.jpg")',
+            'url("https://images.hdqwalls.com/download/iron-man-armor-avengers-infinity-war-po-1920x1080.jpg")',
+            'url("https://images.hdqwalls.com/download/iron-man-marvel-avengers-4k-i9-1920x1080.jpg")'
+        ];
+
+        const armaduras3D = [
+            'https://pngimg.com/uploads/ironman/ironman_PNG44.png',
+            'https://pngimg.com/uploads/ironman/ironman_PNG73.png',
+            'https://pngimg.com/uploads/ironman/ironman_PNG35.png',
+            'https://pngimg.com/uploads/ironman/ironman_PNG67.png'
+        ];
+
+        let currentIndex = 0;
+        const bgElement = document.getElementById('armor-background');
+        const ironMan3D = document.getElementById('iron-man-3d');
+
+        armadurasBackground.forEach(bg => {
+            const img = new Image();
+            img.src = bg.replace('url("', '').replace('")', '');
+        });
+
+        bgElement.style.backgroundImage = armadurasBackground[0];
+
+        setInterval(() => {
+            currentIndex = (currentIndex + 1) % armadurasBackground.length;
+            bgElement.style.backgroundImage = armadurasBackground[currentIndex];
+            
+            ironMan3D.style.opacity = 0;
+            setTimeout(() => {
+                ironMan3D.src = armaduras3D[currentIndex];
+                ironMan3D.style.opacity = 1;
+            }, 500); 
+
+        }, 6000); // Aumentei o tempo de troca para 6 segundos para dar mais tempo de admirar
+
+        // ==========================================
+        // 2. SISTEMA DE PARTÍCULAS (FAÍSCAS DE ENERGIA)
+        // ==========================================
+        const particlesContainer = document.getElementById('particles-container');
+        const particleCount = 40; // Quantidade de faíscas flutuando
+
+        for (let i = 0; i < particleCount; i++) {
+            let particle = document.createElement('div');
+            particle.classList.add('particle');
+            
+            // Posição horizontal aleatória
+            particle.style.left = Math.random() * 100 + 'vw';
+            
+            // Tamanho aleatório para dar profundidade
+            let size = Math.random() * 4 + 1;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            
+            // Velocidade e atraso aleatórios
+            let duration = Math.random() * 5 + 3; // entre 3s e 8s
+            let delay = Math.random() * 5;
+            
+            particle.style.animationDuration = duration + 's';
+            particle.style.animationDelay = delay + 's';
+            
+            particlesContainer.appendChild(particle);
+        }
+
+        // ==========================================
+        // 3. SISTEMA DE CARDS DE HABILIDADES
+        // ==========================================
+        const linguagens = [
+            { nome: "HTML5", desc: "O Esqueleto. Responsável pela estrutura de qualquer sistema, organizando dados, painéis e marcações visuais." },
+            { nome: "CSS3", desc: "A Armadura. Cuida de todo o design avançado, transformando a estrutura com cores, HUDs e animações." },
+            { nome: "JavaScript", desc: "A Inteligência (J.A.R.V.I.S). Dá vida e interatividade ao sistema, como a física 3D que você controla agora." },
+            { nome: "Python", desc: "A Versatilidade. Linguagem tática poderosa, ideal para análise de dados pesados e Inteligência Artificial." },
+            { nome: "SQL", desc: "O Núcleo de Memória. Responsável por salvar, consultar e criptografar as informações nas Indústrias Stark." },
+            { nome: "C / C++", desc: "Força Bruta. Linguagens focadas em desempenho extremo de hardware e sistemas críticos em tempo real." }
+        ];
+
+        const hall = document.getElementById('hall');
+        const repulsorSound = document.getElementById('repulsor-sound');
+
+        linguagens.forEach(lang => {
+            const card = document.createElement('div');
+            card.className = 'tech-card'; // Inicializa sem a classe .visible
+            
+            card.innerHTML = `
+                <div class="repulsor-blast"></div>
+                <div class="arc-reactor"></div>
+                <div class="lang-name">${lang.nome}</div>
+                <p class="lang-desc">${lang.desc}</p>
+            `;
+
+            // Física 3D Hover
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left; 
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -30; 
+                const rotateY = ((x - centerX) / centerX) * 30;
+
+                card.style.transition = 'none'; 
+                card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+
+            // Reseta a física
+            card.addEventListener('mouseleave', () => {
+                card.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                card.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg)`;
+            });
+
+            // Efeito Sonoro
+            card.addEventListener('mouseenter', () => {
+                if(repulsorSound) {
+                    repulsorSound.currentTime = 0;
+                    repulsorSound.play().catch(() => {});
+                }
+            });
+
+            hall.appendChild(card);
+        });
+    </script>
+</body>
+</html>
